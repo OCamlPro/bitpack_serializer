@@ -33,7 +33,7 @@ install: [
   ["sh" "-c" "./scripts/before.sh install '%{name}%'"]
 ]
 depends: [
-  "ocaml" {>= "4.07.0"}
+  "ocaml" {>= "4.08.0"}
   "dune" {>= "2.7.0"}
   "zarith" {>= "1.10"}
   "ppx_inline_test" {with-test}
