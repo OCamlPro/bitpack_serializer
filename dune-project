@@ -4,7 +4,7 @@
 (name bitpack_serializer)
 (allow_approximate_merlin)
 (generate_opam_files false)
-(version dev)
+(version 0.1.0)
 (formatting (enabled_for ocaml reason))
 
 (package
