@@ -13,7 +13,6 @@ authors: ["Steven de Oliveira <de.oliveira.steven@gmail.com>"]
 maintainer: ["Steven de Oliveira <de.oliveira.steven@gmail.com>"]
 build: [
   ["dune" "subst"] {dev}
-  ["sh" "-c" "./scripts/before.sh build '%{name}%'"]
   [
     "dune"
     "build"
@@ -25,10 +24,6 @@ build: [
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
-  ["sh" "-c" "./scripts/after.sh build '%{name}%'"]
-]
-install: [
-  ["sh" "-c" "./scripts/before.sh install '%{name}%'"]
 ]
 depends: [
   "ocaml" {>= "4.08.0"}
