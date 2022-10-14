@@ -74,7 +74,7 @@ val write_uint8 : writer -> int -> unit
 val write_uint16 : writer -> int -> unit
 
 (** Equivalent to [write w v 32] *)
-val write_uint32 : writer -> int -> unit
+val write_uint32 : writer -> int64 -> unit
 
 (** Equivalent to [write w v 63] *)
 val write_uint63 : writer -> int64 -> unit
@@ -125,7 +125,7 @@ val read_uint8 : reader -> int
 val read_uint16 : reader -> int
 
 (** Reads 32 bits *)
-val read_uint32 : reader -> int
+val read_uint32 : reader -> int64
 
 (** Reads 63 bits *)
 val read_uint63 : reader -> int64
