@@ -376,7 +376,7 @@ let write = write_with_stats stats_int
 let read_bool   t : bool  = (read t 1) = Int64.one
 let read_uint8  t : int   = read t 8  |> Int64.to_int
 let read_uint16 t : int   = read t 16 |> Int64.to_int
-let read_uint32 t : int   = read t 32 |> Int64.to_int
+let read_uint32 t : int64 = read t 32
 let read_uint63 t : int64 = read t 63
 
 let write_stat_int = write_with_stats stats_int
@@ -386,7 +386,7 @@ let write_bool t (b : bool) = write_stat_int t Int64.(if b then one else zero) 1
 let write_int t (v : int) nbits = write_stat_int t (Int64.of_int v) nbits
 let write_uint8 t (v : int)     = write_int t v 8
 let write_uint16 t (v : int)    = write_int t v 16
-let write_uint32 t (v : int)    = write_int t v 32
+let write_uint32 t (v : int64)  = write_stat_int t v 32
 let write_uint63 t (v : int64)  = write_stat_int t v 63
 
 let z_length value = (Z.numbits value + 1 + 6) / 7
