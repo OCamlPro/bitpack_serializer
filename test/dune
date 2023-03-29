@@ -4,6 +4,7 @@
  (name lib_expect_tests)
  (preprocess
   (pps ppx_expect))
+ (modules_without_implementation sig)
  (inline_tests
   (modes best)) ; add js for testing with nodejs
  (libraries bitpack_serializer) ; add your project libraries here

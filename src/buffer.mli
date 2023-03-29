@@ -17,9 +17,9 @@
 (** A dictionary type.
     It is used as an argument for initialzing writers and readers.
 *)
-type 'dict dictionary =
-  | NoDictionary
-  | Dictionary of 'dict
+type dictionary_config =
+  [ `NoDictionary
+  | `Dictionary of int option]
 
 (** {1 Writer} *)
 
@@ -45,7 +45,7 @@ type writer
     (by default: 4096)
 *)
 val initialize_writer :
-  ?with_dict:int option dictionary ->
+  ?with_dict:dictionary_config ->
   ?init_size:int ->
   unit -> writer
 
@@ -76,9 +76,6 @@ val write_uint16 : writer -> int -> unit
 (** Equivalent to [write w v 32] *)
 val write_uint32 : writer -> int64 -> unit
 
-(** Equivalent to [write w v 63] *)
-val write_uint63 : writer -> int64 -> unit
-
 (** Writes an unbounded integer.*)
 val write_z : writer -> Z.t -> unit
 
@@ -107,7 +104,7 @@ type reader
     initializing the writer.
 *)
 val initialize_reader :
-  ?with_dict:int option dictionary ->
+  ?with_dict:dictionary_config ->
   Bytes.t -> reader
 
 (** read buff n reads n bits on the buffer as an unsigned value *)
@@ -126,9 +123,6 @@ val read_uint16 : reader -> int
 
 (** Reads 32 bits *)
 val read_uint32 : reader -> int64
-
-(** Reads 63 bits *)
-val read_uint63 : reader -> int64
 
 (** Reads an unsigned int prefixed by its size. *)
 val read_signed_int : reader -> int
