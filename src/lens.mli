@@ -27,13 +27,21 @@ val read : 'a t -> Buffer.reader -> 'a
 
 (** Basic lenses *)
 
-(** A lens for unsigned int of fixed size. *)
-val uint : size:int -> int64 t
+(** A lens for unsigned int64 of fixed size. *)
+val fixed_size_int : size:int -> int64 t
 
-(** A lens for signed integers. *)
-val sint : int t
+(** A lens for int64 of any size.
+    Encodes the size of the integer before the said integer, which is
+    efficient only if the integer is lower than about 2^50. *)
+val int64 : int64 t
 
-(** A lens for Zarith integers *)
+(** A lens for signed integers.
+    Encodes the size of the integer before the said integer, which is
+    efficient only if the integer is lower than about 2^20. *)
+val int : int t
+
+(** A lens for Zarith integers.
+    Encodes the size of the integer before the said integer. *)
 val zint : Z.t t
 
 (** A lens for strings. *)
@@ -47,6 +55,9 @@ val fixed_size_bytes : num_bytes:int -> bytes t
 
 (** Given two lenses for two types, creates a lens for a pair of these types. *)
 val conj : 'a t -> 'b t -> ('a * 'b) t
+
+(** Builds a lens for a list of elements given the lens of the said element. *)
+val list : 'a t -> 'a list t
 
 (** For creating a lens for disjunctions, we define the ['a case] type
     for the {!Lens.disj} function to build new lenses. *)
@@ -65,3 +76,10 @@ val disj : 'a case array -> 'a t
 
 (** Builds a self dependent lens. *)
 val mu : ('a t -> 'a t) -> 'a t
+
+(** Creates a lens from a bijection between two types. *)
+val trans :
+  ('a -> 'b) ->
+  ('b -> 'a) ->
+  'a t ->
+  'b t

@@ -28,8 +28,10 @@ type t =
   }
 
 type 'dict dictionary =
-  | NoDictionary
-  | Dictionary of 'dict
+  [ `NoDictionary
+  | `Dictionary of 'dict]
+
+type dictionary_config = int option dictionary
 
 (** A reading specialized buffer. The dictionary is used to decode strings that
     have been encoded as integers. *)
@@ -48,7 +50,7 @@ type writer = {
   mutable stats : stats;
 }
 
-let default_with_dict = Dictionary None
+let default_with_dict = `Dictionary None
 
 (** Statistic utilities *)
 let stats_bytes t i = t.stats.bits_bytes <- t.stats.bits_bytes + i
@@ -355,14 +357,9 @@ let write_with_stats stats_add (t : writer) (v : int64) (size : int) =
   Log.debug "[write] Writing %a on %i bits@." print_int_bin v size;
   let () =
     check_size size;
-
-    if v >= (Int64.(shift_left one size))
+    if size < 64 && v >= (Int64.(shift_left one size))
     then invalid_argument
         "Value %Ld does not fit on %i bits" v size;
-
-    if v < Int64.zero
-    then invalid_argument
-        "Value %Ld is negative" v
   in
   write_byte
     t.writer
@@ -376,8 +373,7 @@ let write = write_with_stats stats_int
 let read_bool   t : bool  = (read t 1) = Int64.one
 let read_uint8  t : int   = read t 8  |> Int64.to_int
 let read_uint16 t : int   = read t 16 |> Int64.to_int
-let read_uint32 t : int   = read t 32 |> Int64.to_int
-let read_uint63 t : int64 = read t 63
+let read_uint32 t : int64 = read t 32
 
 let write_stat_int = write_with_stats stats_int
 
@@ -386,8 +382,7 @@ let write_bool t (b : bool) = write_stat_int t Int64.(if b then one else zero) 1
 let write_int t (v : int) nbits = write_stat_int t (Int64.of_int v) nbits
 let write_uint8 t (v : int)     = write_int t v 8
 let write_uint16 t (v : int)    = write_int t v 16
-let write_uint32 t (v : int)    = write_int t v 32
-let write_uint63 t (v : int64)  = write_stat_int t v 63
+let write_uint32 t (v : int64)  = write_stat_int t v 32
 
 let z_length value = (Z.numbits value + 1 + 6) / 7
 
@@ -589,8 +584,8 @@ let write_string_id (t : writer) (str_id : int) =
     correspondance between integers and strings. *)
 let write_str_repr (t : writer) s =
   match t.dictionary with
-  | NoDictionary -> write_string t s
-  | Dictionary dict ->
+  | `NoDictionary -> write_string t s
+  | `Dictionary dict ->
       match StringMap.find_opt s !dict with
       | None ->
           let new_id = StringMap.cardinal !dict in
@@ -606,8 +601,8 @@ let read_string_id (t : reader) =
 (** Decodes a string encoded as an integer with the reader dictionary. *)
 let read_str_repr (t : reader) =
   match t.dictionary with
-  | NoDictionary -> read_string t
-  | Dictionary d ->
+  | `NoDictionary -> read_string t
+  | `Dictionary d ->
       let id = read_string_id t in
       match IntMap.find_opt id d with
         None ->
@@ -619,9 +614,9 @@ let read_str_repr (t : reader) =
 let initialize_writer ?(with_dict=default_with_dict) ?(init_size = 4096) () =
   let dictionary, dictionary_max_bit_size =
     match with_dict with
-    | NoDictionary -> NoDictionary, None
-    | Dictionary size ->
-        Dictionary (ref StringMap.empty),
+    | `NoDictionary -> `NoDictionary, None
+    | `Dictionary size ->
+        `Dictionary (ref StringMap.empty),
         dictionary_size_to_max_bit_size size
   in
   { writer =
@@ -637,8 +632,8 @@ let initialize_writer ?(with_dict=default_with_dict) ?(init_size = 4096) () =
 (** Encodes and writes the dictionary in a fresh Bytes buffer *)
 let write_dict d =
   match d with
-  | NoDictionary -> Bytes.empty
-  | Dictionary {contents = d} ->
+  | `NoDictionary -> Bytes.empty
+  | `Dictionary {contents = d} ->
       let t = initialize_writer () in
       let size = StringMap.cardinal d in
       write_signed_int t size;
@@ -667,17 +662,17 @@ let initialize_reader ?(with_dict=default_with_dict) buffer =
       buffer;
       offset = 0;
     };
-    dictionary = NoDictionary; (* updated later *)
+    dictionary = `NoDictionary; (* updated later *)
     dictionary_max_bit_size = None; (* updated later *)
   }
   in
   let () =
     match with_dict with
-    | NoDictionary -> ()
-    | Dictionary size -> begin
+    | `NoDictionary -> ()
+    | `Dictionary size -> begin
         let dictionary =
           let cardinal = read_signed_int t in
-          Log.debug "[initialize_reader] Dictionary size = %i@." cardinal;
+          Log.debug "[initialize_reader] `Dictionary size = %i@." cardinal;
           let rec build_dic dict id =
             if id = cardinal
             then (
@@ -695,7 +690,7 @@ let initialize_reader ?(with_dict=default_with_dict) buffer =
           in
           build_dic IntMap.empty 0
         in
-        t.dictionary <- Dictionary dictionary;
+        t.dictionary <- `Dictionary dictionary;
         t.dictionary_max_bit_size <- dictionary_size_to_max_bit_size size;
       end
   in
@@ -703,8 +698,8 @@ let initialize_reader ?(with_dict=default_with_dict) buffer =
   t
 
 let print_dict fmt = function
-  | NoDictionary -> Format.fprintf fmt "(none)@."
-  | Dictionary {contents = d} ->
+  | `NoDictionary -> Format.fprintf fmt "(none)@."
+  | `Dictionary {contents = d} ->
       StringMap.iter
         (fun key elt -> Format.fprintf fmt "%i: %s@." elt key)
         d
